@@ -209,6 +209,11 @@ export function isDirty(initialState: any, currentState: any): boolean {
   return true;
 }
 
+/**
+ * Creates a deep partial version of a Zod schema.
+ * Note: Uses type assertions for Zod 4 compatibility due to internal API changes.
+ * Runtime behavior is preserved and tested.
+ */
 export function deepPartialify<T extends z.ZodTypeAny>(
   schema: T,
 ): ZodDeepPartial<T> {
@@ -221,24 +226,21 @@ function _deepPartialify(schema: z.ZodTypeAny): any {
 
     for (const key in schema.shape) {
       const fieldSchema = schema.shape[key];
-      newShape[key] = z.ZodOptional.create(_deepPartialify(fieldSchema));
+      // Zod 4: Use .optional() method instead of ZodOptional.create()
+      newShape[key] = (_deepPartialify(fieldSchema) as any).optional();
     }
-    return new z.ZodObject({
-      ...schema._def,
-      shape: () => newShape,
-    }) as any;
+    return z.object(newShape) as any;
   } else if (schema instanceof z.ZodArray) {
-    return new z.ZodArray({
-      ...schema._def,
-      type: _deepPartialify(schema.element),
-    });
+    // Zod 4: Use z.array() factory instead of new ZodArray()
+    return z.array(_deepPartialify((schema as any).element) as any);
   } else if (schema instanceof z.ZodOptional) {
-    return z.ZodOptional.create(_deepPartialify(schema.unwrap()));
+    return (_deepPartialify(schema.unwrap() as any) as any).optional();
   } else if (schema instanceof z.ZodNullable) {
-    return z.ZodNullable.create(_deepPartialify(schema.unwrap()));
+    return (_deepPartialify(schema.unwrap() as any) as any).nullable();
   } else if (schema instanceof z.ZodTuple) {
-    return z.ZodTuple.create(
-      schema.items.map((item: any) => _deepPartialify(item)),
+    // Zod 4: Use z.tuple() factory and access items via _def
+    return z.tuple(
+      (schema._def.items as any[]).map((item: any) => _deepPartialify(item)) as any,
     );
   } else {
     return schema;

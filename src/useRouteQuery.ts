@@ -242,7 +242,7 @@ export function useRouteQuery<
       return null as InferSchemaType<Schema, Nullable>;
     }
 
-    return deepMerge(_defaultValue, parsedData) as InferSchemaType<
+    return deepMerge(_defaultValue, parsedData as any) as InferSchemaType<
       Schema,
       Nullable
     >;
