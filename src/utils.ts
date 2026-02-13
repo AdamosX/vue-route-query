@@ -209,6 +209,11 @@ export function isDirty(initialState: any, currentState: any): boolean {
   return true;
 }
 
+/**
+ * Creates a deep partial version of a Zod schema.
+ * Note: Uses type assertions for Zod 4 compatibility due to internal API changes.
+ * Runtime behavior is preserved and tested.
+ */
 export function deepPartialify<T extends z.ZodTypeAny>(
   schema: T,
 ): ZodDeepPartial<T> {
@@ -221,16 +226,19 @@ function _deepPartialify(schema: z.ZodTypeAny): any {
 
     for (const key in schema.shape) {
       const fieldSchema = schema.shape[key];
+      // Zod 4: Use .optional() method instead of ZodOptional.create()
       newShape[key] = (_deepPartialify(fieldSchema) as any).optional();
     }
     return z.object(newShape) as any;
   } else if (schema instanceof z.ZodArray) {
+    // Zod 4: Use z.array() factory instead of new ZodArray()
     return z.array(_deepPartialify((schema as any).element) as any);
   } else if (schema instanceof z.ZodOptional) {
     return (_deepPartialify(schema.unwrap() as any) as any).optional();
   } else if (schema instanceof z.ZodNullable) {
     return (_deepPartialify(schema.unwrap() as any) as any).nullable();
   } else if (schema instanceof z.ZodTuple) {
+    // Zod 4: Use z.tuple() factory and access items via _def
     return z.tuple(
       (schema._def.items as any[]).map((item: any) => _deepPartialify(item)) as any,
     );

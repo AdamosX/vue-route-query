@@ -37,4 +37,9 @@ export type RouteQueryConfig<
   ? { key: string } // Required for single value schemas
   : { key?: string }); // Optional for object schemas
 
+// Note: Simplified to `any` for Zod 4 compatibility.
+// Zod 4 has changed internal type structures significantly, making it difficult
+// to maintain strict typing without accessing private APIs. The runtime behavior
+// is preserved and validated through testing.
+// TODO: Revisit when Zod 4 stabilizes its public type APIs
 export type ZodDeepPartial<T extends z.ZodTypeAny> = any;
