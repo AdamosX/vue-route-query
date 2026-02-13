@@ -221,24 +221,18 @@ function _deepPartialify(schema: z.ZodTypeAny): any {
 
     for (const key in schema.shape) {
       const fieldSchema = schema.shape[key];
-      newShape[key] = z.ZodOptional.create(_deepPartialify(fieldSchema));
+      newShape[key] = (_deepPartialify(fieldSchema) as any).optional();
     }
-    return new z.ZodObject({
-      ...schema._def,
-      shape: () => newShape,
-    }) as any;
+    return z.object(newShape) as any;
   } else if (schema instanceof z.ZodArray) {
-    return new z.ZodArray({
-      ...schema._def,
-      type: _deepPartialify(schema.element),
-    });
+    return z.array(_deepPartialify((schema as any).element) as any);
   } else if (schema instanceof z.ZodOptional) {
-    return z.ZodOptional.create(_deepPartialify(schema.unwrap()));
+    return (_deepPartialify(schema.unwrap() as any) as any).optional();
   } else if (schema instanceof z.ZodNullable) {
-    return z.ZodNullable.create(_deepPartialify(schema.unwrap()));
+    return (_deepPartialify(schema.unwrap() as any) as any).nullable();
   } else if (schema instanceof z.ZodTuple) {
-    return z.ZodTuple.create(
-      schema.items.map((item: any) => _deepPartialify(item)),
+    return z.tuple(
+      (schema._def.items as any[]).map((item: any) => _deepPartialify(item)) as any,
     );
   } else {
     return schema;
